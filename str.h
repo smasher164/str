@@ -38,10 +38,10 @@ struct string_lib {
   // Copy creates a newly allocated string with the same contents and length of
   // src.
   string (*Copy)(string src);
-  // CSCat concatenates a C string to a string object.
-  string (*CSCat)(string src, const char* cs);
   // Cat concatenates a string object to another string object.
   string (*Cat)(string s1, string s2);
+  // CSCat concatenates a C string to a string object.
+  string (*CSCat)(string src, const char* cs);
   // Slice creates a new string starting at beg (inclusive) and ending at end
   // (exclusive). It then frees src and returns the new slice.
   string (*Slice)(string src, size_t beg, size_t end);
@@ -115,6 +115,6 @@ static inline string slice(string src, size_t beg, size_t end) {
   return s;
 }
 
-struct string_lib const str = {new, copy, catcs, cat, slice, len, strfree};
+struct string_lib const str = {new, copy, cat, catcs, slice, len, strfree};
 
 #endif
