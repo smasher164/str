@@ -19,7 +19,7 @@ string Cat(string s1, string s2);
 string CSCat(string src, const char* cs);
 
 // Slice creates a new string starting at beg (inclusive) and ending at end
-// (exclusive). It then frees src and returns the new slice.
+// (exclusive). It then frees src and returns the new string.
 string Slice(string src, size_t beg, size_t end);
 
 // Len returns the length of the string in constant time.
