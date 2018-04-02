@@ -38,8 +38,6 @@ struct string_lib {
   // Copy creates a newly allocated string with the same contents and length of
   // src.
   string (*Copy)(string src);
-  // Free deletes the stringheader along with its contents.
-  void (*Free)(string s);
   // CSCat concatenates a C string to a string object.
   string (*CSCat)(string src, const char* cs);
   // Cat concatenates a string object to another string object.
@@ -49,6 +47,8 @@ struct string_lib {
   string (*Slice)(string src, size_t beg, size_t end);
   // Len returns the length of the string in constant time.
   size_t (*Len)(string s);
+  // Free deletes the stringheader along with its contents.
+  void (*Free)(string s);
 };
 
 // make allocates a stringheader with the specified length.
@@ -115,6 +115,6 @@ static inline string slice(string src, size_t beg, size_t end) {
   return s;
 }
 
-struct string_lib const str = {new, copy, strfree, catcs, cat, slice, len};
+struct string_lib const str = {new, copy, catcs, cat, slice, len, strfree};
 
 #endif

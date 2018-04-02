@@ -12,9 +12,6 @@ string New(const char* cs);
 // contents and length of src.
 string Copy(string src);
 
-// Free deletes the stringheader along with its contents.
-void Free(string s);
-
 // CSCat concatenates a C string to a string object.
 string CSCat(string src, const char* cs);
 
@@ -27,6 +24,9 @@ string Slice(string src, size_t beg, size_t end);
 
 // Len returns the length of the string in constant time.
 size_t Len(string s);
+
+// Free deletes the stringheader along with its contents.
+void Free(string s);
 ```
 
 The following example demonstrates simple usage of this library:
