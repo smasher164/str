@@ -26,7 +26,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-// string holds an array of characters and a length field. It is created via
+typedef unsigned int uint_t;
+
+// string points to a middle of a structure holding a length field,
+// front offset, and an array of characters. It is created via
 // str.New with an empty value represented by str.New(""). The order of struct
 // fields allows it to be printed like a regular char* in printf.
 typedef char* string;
@@ -42,41 +45,48 @@ struct string_lib {
   string (*Cat)(string s1, string s2);
   // CSCat concatenates a C string to a string object.
   string (*CSCat)(string src, const char* cs);
-  // Slice creates a new string starting at beg (inclusive) and ending at end
-  // (exclusive). It then frees src and returns the new string.
-  string (*Slice)(string src, size_t beg, size_t end);
+  // Slice returns a string that represents a portion of src starting
+  // at beg (inclusive) and ending at end (exclusive).
+  string (*Slice)(string src, uint_t beg, uint_t end);
+  // SliceCopy creates a new string starting at beg (inclusive) and
+  // ending at end (exclusive).
+  string (*SliceCopy)(string src, uint_t beg, uint_t end);
   // Len returns the length of the string in constant time.
-  size_t (*Len)(string s);
+  uint_t (*Len)(string s);
   // Free deletes the stringheader along with its contents.
   void (*Free)(string s);
 };
 
 // make allocates a stringheader with the specified length.
-static inline string make(const char* cs, size_t len) {
-  char* s = malloc(sizeof(size_t) + (sizeof(char) * (len + 1)));
-  memcpy(s + sizeof(size_t), cs, len + 1);
-  (*(size_t**)&s)[0] = len;
-  return s + sizeof(size_t);
+static inline string make(const char* cs, uint_t len) {
+  char* s = malloc((2 * sizeof(uint_t)) + (sizeof(char) * (len + 1)));
+  memcpy(s + (2 * sizeof(uint_t)), cs, len + 1);
+  (*(uint_t**)&s)[0] = len;
+  (*(uint_t**)&s)[1] = sizeof(uint_t);
+  return s + (2 * sizeof(uint_t));
 }
 
 // new creates a string from a c string. An empty string is reflected by a
 // null pointer.
 static inline string new (const char* cs) {
-  size_t len = (cs == NULL) ? 0 : strlen(cs);
+  uint_t len = (cs == NULL) ? 0 : strlen(cs);
   return make(cs, len);
 }
 
 // grow reallocates the string to a new length.
-static inline string grow(string src, size_t newlen) {
-  char* s = realloc(src - sizeof(size_t),
-                    sizeof(size_t) + (sizeof(char) * (newlen + 1)));
-  (*(size_t**)&s)[0] = newlen;
-  return (s + sizeof(size_t));
+static inline string grow(string src, uint_t newlen) {
+  uint_t offset = *(uint_t*)(src - sizeof(uint_t));
+  char* s = realloc(src - sizeof(uint_t) - offset,
+                    (2 * sizeof(uint_t)) + (sizeof(char) * (newlen + 1)));
+  (*(uint_t**)&s)[0] = newlen;
+  (*(uint_t**)&s)[1] = sizeof(uint_t);
+  return s + (2 * sizeof(uint_t));
 }
 
 // len returns the length of the string in constant time.
-static inline size_t len(string s) {
-  size_t l = *(size_t*)(s - sizeof(size_t));
+static inline uint_t len(string s) {
+  uint_t offset = *(uint_t*)(s - sizeof(uint_t));
+  uint_t l = *(uint_t*)(s - sizeof(uint_t) - offset);
   return l;
 }
 
@@ -85,12 +95,15 @@ static inline size_t len(string s) {
 static inline string copy(string src) { return make(src, len(src)); }
 
 // strfree deletes the stringheader along with its contents.
-static inline void strfree(string s) { free(s - sizeof(size_t)); }
+static inline void strfree(string s) {
+  uint_t offset = *(uint_t*)(s - sizeof(uint_t));
+  free(s - sizeof(uint_t) - offset);
+}
 
 // catcs concatenates a c string to a string object.
 static inline string catcs(string src, const char* cs) {
-  size_t cslen = strlen(cs);
-  size_t slen = len(src);
+  uint_t cslen = strlen(cs);
+  uint_t slen = len(src);
   string s = grow(src, slen + cslen);
   memcpy(s + slen, cs, cslen + 1);
   return s;
@@ -98,23 +111,37 @@ static inline string catcs(string src, const char* cs) {
 
 // cat concatenates a string object to another string object.
 static inline string cat(string s1, string s2) {
-  size_t ls1 = len(s1);
-  size_t ls2 = len(s2);
+  uint_t ls1 = len(s1);
+  uint_t ls2 = len(s2);
   string s = grow(s1, ls1 + ls2);
   memcpy(s + ls1, s2, ls2 + 1);
   return s;
 }
 
-// slice creates a new string starting at beg (inclusive) and ending at end
-// (exclusive). It then frees src and returns the new string.
-static inline string slice(string src, size_t beg, size_t end) {
+// slice returns a string that represents a portion of src starting
+// at beg (inclusive) and ending at end (exclusive).
+static inline string slice(string src, uint_t beg, uint_t end) {
+  uint_t newlen = end - beg;
+  src += beg;
+  string s = src - sizeof(uint_t);
+  (*(uint_t**)&s)[0] += beg;
+  uint_t offset = *(uint_t*)s;
+  s -= offset;
+  (*(uint_t**)&s)[0] = newlen;
+  src[newlen] = '\0';
+  return src;
+}
+
+// slicecopy creates a new string starting at beg (inclusive) and ending at end
+// (exclusive).
+static inline string slicecopy(string src, uint_t beg, uint_t end) {
   size_t newlen = end - beg;
   string s = make(src + beg, newlen);
   s[newlen] = '\0';
-  strfree(src);
   return s;
 }
 
-struct string_lib const str = {new, copy, cat, catcs, slice, len, strfree};
+struct string_lib const str = {new,   copy,      cat, catcs,
+                               slice, slicecopy, len, strfree};
 
 #endif
