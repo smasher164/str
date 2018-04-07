@@ -22,7 +22,6 @@
 //
 #ifndef STR_H
 #define STR_H
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -33,8 +32,8 @@
 typedef char* string;
 
 struct string_lib {
-  // New creates a string from a C string. An empty string is reflected by a
-  // null pointer.
+  // New creates a string object from a C string. It is invalid to pass in a
+  // NULL pointer.
   string (*New)(const char* cs);
   // Copy creates a newly allocated string with the same contents and length of
   // src.
@@ -61,24 +60,25 @@ static inline string make(const char* cs, size_t len) {
   memcpy(s + (2 * sizeof(size_t)), cs, len + 1);
   (*(size_t**)&s)[0] = len;
   (*(size_t**)&s)[1] = sizeof(size_t);
-  return s + (2 * sizeof(size_t));
+  s += (2 * sizeof(size_t));
+  s[len] = '\0';
+  return s;
 }
 
-// new creates a string from a c string. An empty string is reflected by a
-// null pointer.
-static inline string new (const char* cs) {
-  size_t len = (cs == NULL) ? 0 : strlen(cs);
-  return make(cs, len);
-}
+// new creates a string object from a c string. It is invalid to pass in a NULL
+// pointer.
+static inline string new (const char* cs) { return make(cs, strlen(cs)); }
 
-// grow reallocates the string to a new length.
+// grow reallocates the string object to hold a string of length newlen.
 static inline string grow(string src, size_t newlen) {
   size_t offset = *(size_t*)(src - sizeof(size_t));
   char* s = realloc(src - sizeof(size_t) - offset,
                     (2 * sizeof(size_t)) + (sizeof(char) * (newlen + 1)));
   (*(size_t**)&s)[0] = newlen;
   (*(size_t**)&s)[1] = sizeof(size_t);
-  return s + (2 * sizeof(size_t));
+  s += (2 * sizeof(size_t));
+  s[newlen] = '\0';
+  return s;
 }
 
 // len returns the length of the string in constant time.

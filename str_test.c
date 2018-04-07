@@ -23,6 +23,7 @@ void TestCopy(Test* t) {
       "the second \"should\" should be copy sliced in",
   };
   string s, copy, s2;
+  s = copy = s2 = NULL;
   // copy "a"
   s = str.New(cases[0]);
   copyHelper(t, s, s2);

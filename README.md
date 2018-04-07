@@ -4,8 +4,8 @@ str is a lightweight, header-only, string-handling library for C.
 
 str defines a data type named `string` and the following functions under a package namespace called `str`.
 ```C
-// New creates a string from a C string. An empty string
-// is reflected by a null pointer.
+// New creates a string object from a C string. It is invalid to pass in a
+// NULL pointer.
 string New(const char* cs);
 
 // Copy creates a newly allocated string with the same
