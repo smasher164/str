@@ -20,14 +20,14 @@ string CSCat(string src, const char* cs);
 
 // Slice returns a string that represents a portion of src starting
 // at beg (inclusive) and ending at end (exclusive).
-string Slice(string src, uint_t beg, uint_t end);
+string Slice(string src, size_t beg, size_t end);
 
 // Slice creates a new string starting at beg (inclusive) and
 // ending at end (exclusive).
-string SliceCopy(string src, uint_t beg, uint_t end);
+string SliceCopy(string src, size_t beg, size_t end);
 
 // Len returns the length of the string in constant time.
-uint_t Len(string s);
+size_t Len(string s);
 
 // Free deletes the stringheader along with its contents.
 void Free(string s);
