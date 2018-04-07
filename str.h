@@ -56,7 +56,7 @@ struct string_lib {
 
 // make allocates a stringheader with the specified length.
 static inline string make(const char* cs, size_t len) {
-  char* s = malloc((2 * sizeof(size_t)) + (sizeof(char) * (len + 1)));
+  char* s = malloc((2 * sizeof(size_t)) + (len + 1));
   memcpy(s + (2 * sizeof(size_t)), cs, len + 1);
   (*(size_t**)&s)[0] = len;
   (*(size_t**)&s)[1] = sizeof(size_t);
@@ -73,7 +73,7 @@ static inline string new (const char* cs) { return make(cs, strlen(cs)); }
 static inline string grow(string src, size_t newlen) {
   size_t offset = *(size_t*)(src - sizeof(size_t));
   char* s = realloc(src - sizeof(size_t) - offset,
-                    (2 * sizeof(size_t)) + (sizeof(char) * (newlen + 1)));
+                    (2 * sizeof(size_t)) + (newlen + 1));
   (*(size_t**)&s)[0] = newlen;
   (*(size_t**)&s)[1] = sizeof(size_t);
   s += (2 * sizeof(size_t));
