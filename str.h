@@ -54,8 +54,8 @@ struct string_lib {
   void (*Free)(string s);
 };
 
-// make allocates a stringheader with the specified length.
-static inline string make(const char* cs, size_t len) {
+// str__make allocates a stringheader with the specified length.
+static inline string str__make(const char* cs, size_t len) {
   char* s = malloc((2 * sizeof(size_t)) + (len + 1));
   memcpy(s + (2 * sizeof(size_t)), cs, len + 1);
   (*(size_t**)&s)[0] = len;
@@ -65,12 +65,14 @@ static inline string make(const char* cs, size_t len) {
   return s;
 }
 
-// new creates a string object from a c string. It is invalid to pass in a NULL
-// pointer.
-static inline string new (const char* cs) { return make(cs, strlen(cs)); }
+// str__new creates a string object from a c string. It is invalid to pass in a
+// NULL pointer.
+static inline string str__new(const char* cs) {
+  return str__make(cs, strlen(cs));
+}
 
-// grow reallocates the string object to hold a string of length newlen.
-static inline string grow(string src, size_t newlen) {
+// str__grow reallocates the string object to hold a string of length newlen.
+static inline string str__grow(string src, size_t newlen) {
   size_t offset = *(size_t*)(src - sizeof(size_t));
   char* s = realloc(src - sizeof(size_t) - offset,
                     (2 * sizeof(size_t)) + (newlen + 1));
@@ -81,44 +83,46 @@ static inline string grow(string src, size_t newlen) {
   return s;
 }
 
-// len returns the length of the string in constant time.
-static inline size_t len(string s) {
+// str__len returns the length of the string in constant time.
+static inline size_t str__len(string s) {
   size_t offset = *(size_t*)(s - sizeof(size_t));
   size_t l = *(size_t*)(s - sizeof(size_t) - offset);
   return l;
 }
 
-// copy creates a newly allocated string with the same contents and length of
-// src.
-static inline string copy(string src) { return make(src, len(src)); }
+// str__copy creates a newly allocated string with the same contents and length
+// of src.
+static inline string str__copy(string src) {
+  return str__make(src, str__len(src));
+}
 
-// strfree deletes the stringheader along with its contents.
-static inline void strfree(string s) {
+// str__free deletes the stringheader along with its contents.
+static inline void str__free(string s) {
   size_t offset = *(size_t*)(s - sizeof(size_t));
   free(s - sizeof(size_t) - offset);
 }
 
-// catcs concatenates a c string to a string object.
-static inline string catcs(string src, const char* cs) {
+// str__catcs concatenates a c string to a string object.
+static inline string str__catcs(string src, const char* cs) {
   size_t cslen = strlen(cs);
-  size_t slen = len(src);
-  string s = grow(src, slen + cslen);
+  size_t slen = str__len(src);
+  string s = str__grow(src, slen + cslen);
   memcpy(s + slen, cs, cslen + 1);
   return s;
 }
 
-// cat concatenates a string object to another string object.
-static inline string cat(string s1, string s2) {
-  size_t ls1 = len(s1);
-  size_t ls2 = len(s2);
-  string s = grow(s1, ls1 + ls2);
+// str__cat concatenates a string object to another string object.
+static inline string str__cat(string s1, string s2) {
+  size_t ls1 = str__len(s1);
+  size_t ls2 = str__len(s2);
+  string s = str__grow(s1, ls1 + ls2);
   memcpy(s + ls1, s2, ls2 + 1);
   return s;
 }
 
-// slice returns a string that represents a portion of src starting
+// str__slice returns a string that represents a portion of src starting
 // at beg (inclusive) and ending at end (exclusive).
-static inline string slice(string src, size_t beg, size_t end) {
+static inline string str__slice(string src, size_t beg, size_t end) {
   size_t newlen = end - beg;
   size_t offset = *(size_t*)(src - sizeof(size_t)) + beg;
   src += beg;
@@ -130,16 +134,16 @@ static inline string slice(string src, size_t beg, size_t end) {
   return src;
 }
 
-// slicecopy creates a new string starting at beg (inclusive) and ending at end
-// (exclusive).
-static inline string slicecopy(string src, size_t beg, size_t end) {
+// str__slicecopy creates a new string starting at beg (inclusive) and ending at
+// end (exclusive).
+static inline string str__slicecopy(string src, size_t beg, size_t end) {
   size_t newlen = end - beg;
-  string s = make(src + beg, newlen);
+  string s = str__make(src + beg, newlen);
   s[newlen] = '\0';
   return s;
 }
 
-struct string_lib const str = {new,   copy,      cat, catcs,
-                               slice, slicecopy, len, strfree};
+struct string_lib const str = {str__new,   str__copy,      str__cat, str__catcs,
+                               str__slice, str__slicecopy, str__len, str__free};
 
 #endif
